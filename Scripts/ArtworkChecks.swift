@@ -29,20 +29,26 @@ private final class ThumbnailProtocol: URLProtocol, @unchecked Sendable {
     override func stopLoading() {}
 }
 @main enum ArtworkChecks {
-    static func main() async throws {
+    @MainActor static func main() async throws {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [ThumbnailProtocol.self]
         let service = ArtworkService(configuration: config)
         let start = Date()
         let image = try await service.load(URL(string: "https://i.ytimg.com/valid")!, maxPixelSize: 640)
         precondition(image.size.width == 1 && image.size.height == 1)
+        let palette = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 1, pixelsHigh: 1, bitsPerSample: 8,
+            samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 4, bitsPerPixel: 32)!
+        palette.setColor(NSColor(deviceRed: 0, green: 1, blue: 0, alpha: 1), atX: 0, y: 0)
+        let green = NSImage(size: NSSize(width: 1, height: 1)); green.addRepresentation(palette)
+        let accent = ArtworkService.accent(from: green)!
+        precondition(abs(accent.hueComponent - 1.0 / 3) < 0.01 && accent.saturationComponent > 0.8)
         for mode in ["large", "mime"] {
             do {
                 _ = try await service.load(URL(string: "https://i.ytimg.com/\(mode)")!)
                 fatalError("Invalid artwork accepted: \(mode)")
             } catch { /* expected rejection */ }
         }
-        let pending = Task { try await service.load(URL(string: "https://i.ytimg.com/cancel")!) }
+        let pending = Task { _ = try await service.load(URL(string: "https://i.ytimg.com/cancel")!) }
         try await Task.sleep(for: .milliseconds(30)); pending.cancel()
         do { _ = try await pending.value; fatalError("Cancelled artwork accepted") } catch {}
         do { _ = try await service.load(URL(string: "https://example.com/no")!); fatalError("Foreign host accepted") } catch {}

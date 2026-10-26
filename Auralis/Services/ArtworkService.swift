@@ -57,7 +57,7 @@ final class ArtworkService: NSObject, URLSessionDataDelegate, @unchecked Sendabl
     private func register(_ continuation: CheckedContinuation<Data, Error>, task: URLSessionDataTask) {
         lock.lock(); transfers[task.taskIdentifier] = Transfer(continuation: continuation); lock.unlock()
     }
-    func load(_ url: URL, maxPixelSize: Int = 1600) async throws -> NSImage {
+    @MainActor func load(_ url: URL, maxPixelSize: Int = 1600) async throws -> NSImage {
         guard ArtworkPolicy.permits(url) else { throw URLError(.unsupportedURL) }
         try Task.checkCancellation()
         if let data = await diskCache?.data(for: url) {
@@ -86,9 +86,9 @@ final class ArtworkService: NSObject, URLSessionDataDelegate, @unchecked Sendabl
             }
         } onCancel: { ticket.cancel() }
     }
-    private func decode(_ data: Data, maxPixelSize: Int) async throws -> NSImage {
+    @MainActor private func decode(_ data: Data, maxPixelSize: Int) async throws -> NSImage {
         // Decode at a bounded display size away from the main actor.
-        return try await Task.detached(priority: .userInitiated) {
+        let decoded = try await Task.detached(priority: .userInitiated) {
             guard let source = CGImageSourceCreateWithData(data as CFData, nil),
                   let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                     kCGImageSourceCreateThumbnailFromImageAlways: true,
@@ -96,27 +96,38 @@ final class ArtworkService: NSObject, URLSessionDataDelegate, @unchecked Sendabl
                     kCGImageSourceShouldCacheImmediately: true,
                     kCGImageSourceCreateThumbnailWithTransform: true
                   ] as CFDictionary) else { throw URLError(.cannotDecodeContentData) }
-            return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+            return DecodedArtwork(image: image)
         }.value
+        return NSImage(cgImage: decoded.image, size: NSSize(width: decoded.image.width, height: decoded.image.height))
     }
-    static func accent(from image: NSImage) -> NSColor? {
-        guard let tiff = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff) else { return nil }
+    @MainActor static func accent(from image: NSImage) -> NSColor? {
+        // Sample a tiny bitmap instead of re-encoding a full cover as TIFF.
+        guard let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let context = CGContext(data: nil, width: 12, height: 12, bitsPerComponent: 8, bytesPerRow: 48,
+                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let bytes = context.data?.assumingMemoryBound(to: UInt8.self) else { return nil }
+        context.draw(source, in: CGRect(x: 0, y: 0, width: 12, height: 12))
         var best: NSColor?; var bestScore: CGFloat = 0
-        for y in stride(from: 0, to: bitmap.pixelsHigh, by: max(1, bitmap.pixelsHigh / 12)) {
-            for x in stride(from: 0, to: bitmap.pixelsWide, by: max(1, bitmap.pixelsWide / 12)) {
-                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
-                var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-                color.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
-                let score = s * (1 - abs(b - 0.72))
-                if score > bestScore && a > 0.5 {
-                    bestScore = score
-                    best = NSColor(hue: h, saturation: min(0.82, max(0.45, s)), brightness: 0.95, alpha: 1)
-                }
+        for index in 0..<144 {
+            let offset = index * 4, alpha = CGFloat(bytes[offset + 3]) / 255
+            guard alpha > 0.5 else { continue }
+            let color = NSColor(deviceRed: min(1, CGFloat(bytes[offset]) / 255 / alpha),
+                                green: min(1, CGFloat(bytes[offset + 1]) / 255 / alpha),
+                                blue: min(1, CGFloat(bytes[offset + 2]) / 255 / alpha), alpha: alpha)
+            var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            color.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+            let score = s * (1 - abs(b - 0.72))
+            if score > bestScore && a > 0.5 {
+                bestScore = score
+                best = NSColor(hue: h, saturation: min(0.82, max(0.45, s)), brightness: 0.95, alpha: 1)
             }
         }
         return best
     }
 }
+
+/// CGImage pixels are immutable. AppKit image instances stay on the main actor.
+private struct DecodedArtwork: @unchecked Sendable { let image: CGImage }
 
 private final class ArtworkTicket: @unchecked Sendable {
     private let lock = NSLock()

@@ -384,7 +384,7 @@ import Observation
             guard let image = try? await artLoader.load(url), !Task.isCancelled, artworkAttempts.generation == attempt else { return }
             artwork = image
             succeeded = true
-            let color = await Task.detached(priority: .utility) { ArtworkService.accent(from: image) }.value
+            let color = ArtworkService.accent(from: image)
             guard !Task.isCancelled, artworkAttempts.generation == attempt else { return }
             if let color { artworkAccent = Color(nsColor: color) }
             if let snapshot, fresh { systemMedia.update(snapshot: snapshot, position: position(at: Date()), artwork: image) }

@@ -20,7 +20,7 @@ The compact current-track group is a separate accessible Now Playing button; pla
 
 ## Artwork
 
-`ArtworkService` uses cookie/credential-free URLSession delegate chunks, exact-host redirect checks, image MIME validation and an 8 MB receive cap. Decode and accent extraction run away from the main actor. `BrowseArtworkCache` deduplicates requests, limits concurrency to four, downsamples thumbnails to 640 px and bounds memory to 80 MB / 100 images. Cached images render immediately when views return.
+`ArtworkService` uses cookie/credential-free URLSession delegate chunks, exact-host redirect checks, image MIME validation and an 8 MB receive cap. ImageIO decoding runs away from the main actor and transfers immutable CGImage pixels; NSImage instances stay on the main actor. Accent sampling uses a tiny 12 × 12 bitmap without re-encoding the cover as TIFF. `BrowseArtworkCache` deduplicates requests, limits concurrency to four, downsamples thumbnails to 640 px and bounds memory to 80 MB / 100 images. Cached images render immediately when views return.
 
 `ArtworkDiskCache` stores validated encoded images under hashed source-URL filenames in the user's Caches directory. Writes are atomic; entries expire after seven days and are pruned to 96 MB / 512 files. Corrupt images are evicted and fetched again. No session data is cached here. Visible thumbnails retry temporary failures at bounded 15-second intervals. The source adapter retains only public image URLs actually observed on a matching card during normal warm-up scrolling; a changed card identity invalidates that memory. Player covers can decode to 1600 px. A failed current-cover request may retry after 15 seconds; generation tokens prevent superseded requests from changing current artwork/loading state.
 

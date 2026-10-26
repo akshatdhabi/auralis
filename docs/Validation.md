@@ -1,4 +1,4 @@
-# Validation · 0.5.1 (build 15)
+# Validation · 0.5.1 (build 16)
 
 ## Local automated checks
 
@@ -7,7 +7,7 @@
 - Playback, browse/radio/queue/search and rendered-lyrics fixtures cover public controls, rejected actions, hidden/detached content and origin/source matching.
 - Optimized arm64/macOS 14 compilation treats warnings as errors. The build verifies its strict ad-hoc signature. Project/plist and script syntax are checked.
 
-All local checks passed for this revision. The remote hosted XCTest result is recorded below when available. Local fixture timings are not live network or frame-rate benchmarks.
+All local checks passed for this revision. The initial macOS 15 CI run exposed older-SDK NSImage Sendable diagnostics. The correction confines AppKit images to the main actor and transfers only immutable decoded pixels. A new CI run checks this fix; its result is recorded when available. Local fixture timings are not live network or frame-rate benchmarks.
 
 ## Previous live checks retained
 
