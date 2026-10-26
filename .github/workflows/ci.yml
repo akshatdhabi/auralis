@@ -1,0 +1,33 @@
+name: macOS checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Core, transport, adapters and optimized arm64 build
+        run: bash Scripts/check.sh
+      - name: Xcode hosted XCTest
+        run: >-
+          xcodebuild test -project Auralis.xcodeproj -scheme Auralis
+          -destination 'platform=macOS,arch=arm64'
+          -derivedDataPath build/Xcode
