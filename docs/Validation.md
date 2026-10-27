@@ -7,7 +7,7 @@
 - Playback, browse/radio/queue/search and rendered-lyrics fixtures cover public controls, rejected actions, hidden/detached content and origin/source matching.
 - Optimized arm64/macOS 14 compilation treats warnings as errors. The build verifies its strict ad-hoc signature. Project/plist and script syntax are checked.
 
-All local checks passed for this revision. The initial macOS 15 CI run exposed older-SDK NSImage Sendable diagnostics. The correction confines AppKit images to the main actor and transfers only immutable decoded pixels. A new CI run checks this fix; its result is recorded when available. Local fixture timings are not live network or frame-rate benchmarks.
+All local checks passed for this revision. [GitHub Actions run 40441761678](https://github.com/akshatdhabi/auralis/actions/runs/40441761678) passed on macOS 15 for commit `232011a`: the complete check script, optimized arm64 build, and Xcode hosted XCTest (12 tests, zero failures). SDK compatibility fixes confine AppKit images to the main actor, transfer only immutable decoded pixels, and capture scalar geometry in scroll transitions. Local fixture timings are not live network or frame-rate benchmarks.
 
 ## Previous live checks retained
 
@@ -19,6 +19,6 @@ Full-screen round trips through the visible Exit control, system toggle and Esca
 
 This is an ad-hoc signed development preview. Developer ID/notarization, physical media keys and displayed OS Now Playing, VoiceOver, localization, measured energy/FPS, sleep/wake/network recovery, every window/scale combination and the wider OS/M-series runtime matrix are not certified here. The deployment target and architecture do not establish testing on every model. Optional provider content can be unavailable. All ambient motion uses time and observed playback state, never decoded audio.
 
-The README GIFs were captured from the running app, resized and looped; no frame-rate guarantee is inferred. New automated cases verify that an observed public thumbnail URL survives source virtualization only while the card identity still matches.
+The README GIFs were captured from the running app, resized and looped; no frame-rate guarantee is inferred. The navigation demo holds each screen and uses an edited dissolve. Its 14 decoded frames were checked against the intended full frames to catch palette/disposal artifacts; it loops over 4.92 seconds. New automated cases verify that an observed public thumbnail URL survives source virtualization only while the card identity still matches.
 
 The public repository excludes account/session data, image caches, personal screenshots, old companion prototypes, test binaries and historical setup records.
