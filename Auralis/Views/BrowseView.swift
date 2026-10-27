@@ -12,11 +12,12 @@ struct BrowseArtwork: View {
     var body: some View {
         let reduceMotion = reduceMotion
         GeometryReader { geo in
+            let verticalParallax = min(12, geo.size.height * 0.06)
             ZStack {
                 LinearGradient(colors: [Color(red: 0.17, green: 0.14, blue: 0.21), .ink], startPoint: .topLeading, endPoint: .bottomTrailing)
                 if let image = (imageAddress == address ? image : nil) ?? seed ?? BrowseArtworkCache.shared.cached(address) { Image(nsImage: image).resizable().scaledToFill().frame(width: geo.size.width, height: geo.size.height)
                     .scaleEffect(reduceMotion ? 1 : 1.16)
-                    .scrollTransition(.interactive, axis: .vertical) { effect, phase in effect.offset(y: reduceMotion ? 0 : phase.value * -min(12, geo.size.height * 0.06)) }
+                    .scrollTransition(.interactive, axis: .vertical) { effect, phase in effect.offset(y: reduceMotion ? 0 : phase.value * -verticalParallax) }
                     .modifier(PanoramaArtworkOffset())
                     .clipped() }
                 else { VStack(spacing: 10) { Image(systemName: "music.note").font(.system(size: 26, weight: .ultraLight)); if address != nil && !resolved { ProgressView().controlSize(.mini).tint(.white.opacity(0.3)) } }.foregroundStyle(.white.opacity(0.16)) }

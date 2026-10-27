@@ -26,9 +26,9 @@ Big artwork. Bold typography. A little space for the music to breathe. Auralis b
 - **Words with a source.** Optional rendered YouTube Music lyrics or attributed Wikipedia artist context; unavailable sources fall back to track typography.
 - **Quiet when it should be.** Decorative movement respects Reduce Motion, Low Power Mode and app inactivity. Listening-room motion also follows playback state.
 
-![Clicking the current track opens the native Now Playing screen without interrupting playback](docs/media/navigation.gif)
+![Clicking the current track opens the native Now Playing screen without interrupting playback](docs/media/navigation-demo.gif)
 
-The GIFs are silent captures of the running app, resized, trimmed and looped with presentation captions. They are not frame-rate benchmarks. Artwork belongs to its respective owners. [Static immersive preview](docs/media/immersive-poster.png) · [Static Browse preview](docs/media/navigation-poster.png)
+The GIFs are silent captures of the running app, resized, trimmed and looped with presentation captions. The navigation demo holds both screens and uses an edited dissolve for readability. They are not frame-rate benchmarks. Artwork belongs to its respective owners. [Static immersive preview](docs/media/immersive-poster.png) · [Static Browse preview](docs/media/navigation-poster.png)
 
 ## Build and run
 
